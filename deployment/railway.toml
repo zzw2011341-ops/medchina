@@ -23,7 +23,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = "1440"
 COZE_INTEGRATION_MODEL_BASE_URL = "https://api.coze.com"
 
-[[services.envVars.DATABASE_URL]]
+[[services.envVars.PGDATABASE_URL]]
 source = "Postgres"
 connectionString = "${{ Postgres.DATABASE_URL }}"
 
