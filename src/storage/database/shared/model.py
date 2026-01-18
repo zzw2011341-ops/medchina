@@ -28,6 +28,31 @@ class AppointmentStatus(str, enum.Enum):
     CANCELLED = "cancelled"
     COMPLETED = "completed"
 
+class PaymentMethod(str, enum.Enum):
+    """支付方式枚举"""
+    WECHAT_PAY = "wechat_pay"
+    VISA = "visa"
+    MASTERCARD = "mastercard"
+    ALIPAY = "alipay"
+    PAYPAL = "paypal"
+    UNIONPAY = "unionpay"
+
+class PaymentStatus(str, enum.Enum):
+    """支付状态枚举"""
+    PENDING = "pending"
+    PAID = "paid"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+    REFUNDED = "refunded"
+
+class OrderStatus(str, enum.Enum):
+    """订单状态枚举"""
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    CANCELLED = "cancelled"
+    COMPLETED = "completed"
+    REFUNDED = "refunded"
+
 class User(Base):
     """用户表"""
     __tablename__ = "users"
@@ -48,6 +73,7 @@ class User(Base):
     sent_messages = relationship("Message", foreign_keys="Message.sender_id", back_populates="sender")
     received_messages = relationship("Message", foreign_keys="Message.receiver_id", back_populates="receiver")
     appointments = relationship("Appointment", back_populates="user", cascade="all, delete-orphan")
+    payment_records = relationship("PaymentRecord", cascade="all, delete-orphan")
     
     __table_args__ = (
         Index("ix_users_email", "email"),
@@ -260,6 +286,9 @@ class Appointment(Base):
     disease_info = Column(Text, nullable=True, comment="病情描述")
     symptoms = Column(JSON, nullable=True, comment="症状列表")
     status = Column(SQLEnum(AppointmentStatus), default=AppointmentStatus.PENDING, nullable=False, comment="预约状态")
+    payment_id = Column(Integer, ForeignKey("payment_records.id"), nullable=True, comment="支付记录ID")
+    consultation_fee = Column(Float, nullable=True, comment="咨询费用")
+    surgery_fee = Column(Float, nullable=True, comment="手术费用")
     notes = Column(Text, nullable=True, comment="备注")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, comment="创建时间")
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True, comment="更新时间")
@@ -272,5 +301,165 @@ class Appointment(Base):
         Index("ix_appointments_user", "user_id"),
         Index("ix_appointments_doctor", "doctor_id"),
         Index("ix_appointments_status", "status"),
+    )
+
+class PaymentRecord(Base):
+    """支付记录表"""
+    __tablename__ = "payment_records"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="用户ID")
+    order_type = Column(String(50), nullable=False, comment="订单类型（appointment/flight/hotel/train/ticket）")
+    order_id = Column(Integer, nullable=True, comment="关联订单ID")
+    amount = Column(Float, nullable=False, comment="支付金额")
+    currency = Column(String(10), default="USD", nullable=False, comment="货币类型")
+    payment_method = Column(SQLEnum(PaymentMethod), nullable=False, comment="支付方式")
+    status = Column(SQLEnum(PaymentStatus), default=PaymentStatus.PENDING, nullable=False, comment="支付状态")
+    transaction_id = Column(String(128), nullable=True, comment="交易流水号")
+    payment_time = Column(DateTime(timezone=True), nullable=True, comment="支付时间")
+    refund_time = Column(DateTime(timezone=True), nullable=True, comment="退款时间")
+    refund_amount = Column(Float, nullable=True, comment="退款金额")
+    remark = Column(Text, nullable=True, comment="备注")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, comment="创建时间")
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True, comment="更新时间")
+    
+    __table_args__ = (
+        Index("ix_payments_user", "user_id"),
+        Index("ix_payments_order", "order_id"),
+        Index("ix_payments_status", "status"),
+    )
+
+class FlightOrder(Base):
+    """机票订单表"""
+    __tablename__ = "flight_orders"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="用户ID")
+    travel_plan_id = Column(Integer, ForeignKey("travel_plans.id"), nullable=True, comment="出行方案ID")
+    flight_number = Column(String(50), nullable=False, comment="航班号")
+    airline = Column(String(100), nullable=True, comment="航空公司")
+    departure_city = Column(String(100), nullable=False, comment="出发城市")
+    arrival_city = Column(String(100), nullable=False, comment="到达城市")
+    departure_time = Column(DateTime(timezone=True), nullable=False, comment="出发时间")
+    arrival_time = Column(DateTime(timezone=True), nullable=False, comment="到达时间")
+    passenger_name = Column(String(128), nullable=False, comment="乘客姓名")
+    passenger_id_number = Column(String(50), nullable=True, comment="证件号码")
+    seat_class = Column(String(20), nullable=True, comment="舱位等级（economy/business/first）")
+    seat_number = Column(String(10), nullable=True, comment="座位号")
+    price = Column(Float, nullable=False, comment="机票价格")
+    currency = Column(String(10), default="USD", nullable=False, comment="货币类型")
+    status = Column(SQLEnum(OrderStatus), default=OrderStatus.PENDING, nullable=False, comment="订单状态")
+    payment_id = Column(Integer, ForeignKey("payment_records.id"), nullable=True, comment="支付记录ID")
+    booking_reference = Column(String(50), nullable=True, comment="预订参考号")
+    notes = Column(Text, nullable=True, comment="备注")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, comment="创建时间")
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True, comment="更新时间")
+    
+    __table_args__ = (
+        Index("ix_flight_orders_user", "user_id"),
+        Index("ix_flight_orders_plan", "travel_plan_id"),
+        Index("ix_flight_orders_status", "status"),
+    )
+
+class HotelOrder(Base):
+    """酒店订单表"""
+    __tablename__ = "hotel_orders"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="用户ID")
+    travel_plan_id = Column(Integer, ForeignKey("travel_plans.id"), nullable=True, comment="出行方案ID")
+    hotel_name = Column(String(256), nullable=False, comment="酒店名称")
+    hotel_address = Column(Text, nullable=True, comment="酒店地址")
+    city = Column(String(100), nullable=False, comment="城市")
+    room_type = Column(String(100), nullable=True, comment="房型（single/double/suite等）")
+    check_in_date = Column(DateTime(timezone=True), nullable=False, comment="入住日期")
+    check_out_date = Column(DateTime(timezone=True), nullable=False, comment="退房日期")
+    guest_name = Column(String(128), nullable=False, comment="入住人姓名")
+    number_of_rooms = Column(Integer, default=1, nullable=False, comment="房间数量")
+    number_of_guests = Column(Integer, default=1, nullable=False, comment="入住人数")
+    price_per_night = Column(Float, nullable=False, comment="每晚价格")
+    total_price = Column(Float, nullable=False, comment="总价格")
+    currency = Column(String(10), default="USD", nullable=False, comment="货币类型")
+    breakfast_included = Column(Boolean, default=False, nullable=False, comment="是否含早餐")
+    cancellation_policy = Column(Text, nullable=True, comment="取消政策")
+    status = Column(SQLEnum(OrderStatus), default=OrderStatus.PENDING, nullable=False, comment="订单状态")
+    payment_id = Column(Integer, ForeignKey("payment_records.id"), nullable=True, comment="支付记录ID")
+    booking_reference = Column(String(50), nullable=True, comment="预订参考号")
+    notes = Column(Text, nullable=True, comment="备注")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, comment="创建时间")
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True, comment="更新时间")
+    
+    __table_args__ = (
+        Index("ix_hotel_orders_user", "user_id"),
+        Index("ix_hotel_orders_plan", "travel_plan_id"),
+        Index("ix_hotel_orders_status", "status"),
+    )
+
+class TrainTicketOrder(Base):
+    """车票订单表"""
+    __tablename__ = "train_ticket_orders"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="用户ID")
+    travel_plan_id = Column(Integer, ForeignKey("travel_plans.id"), nullable=True, comment="出行方案ID")
+    train_number = Column(String(50), nullable=False, comment="车次")
+    train_type = Column(String(20), nullable=True, comment="车型（high_speed/express/regular）")
+    departure_station = Column(String(100), nullable=False, comment="出发车站")
+    arrival_station = Column(String(100), nullable=False, comment="到达车站")
+    departure_city = Column(String(100), nullable=False, comment="出发城市")
+    arrival_city = Column(String(100), nullable=False, comment="到达城市")
+    departure_time = Column(DateTime(timezone=True), nullable=False, comment="出发时间")
+    arrival_time = Column(DateTime(timezone=True), nullable=False, comment="到达时间")
+    passenger_name = Column(String(128), nullable=False, comment="乘客姓名")
+    passenger_id_number = Column(String(50), nullable=True, comment="证件号码")
+    seat_type = Column(String(20), nullable=True, comment="座席类型（first/second/soft_sleeper/hard_sleeper等）")
+    seat_number = Column(String(10), nullable=True, comment="座位号")
+    carriage_number = Column(String(10), nullable=True, comment="车厢号")
+    price = Column(Float, nullable=False, comment="车票价格")
+    currency = Column(String(10), default="USD", nullable=False, comment="货币类型")
+    status = Column(SQLEnum(OrderStatus), default=OrderStatus.PENDING, nullable=False, comment="订单状态")
+    payment_id = Column(Integer, ForeignKey("payment_records.id"), nullable=True, comment="支付记录ID")
+    booking_reference = Column(String(50), nullable=True, comment="预订参考号")
+    notes = Column(Text, nullable=True, comment="备注")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, comment="创建时间")
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True, comment="更新时间")
+    
+    __table_args__ = (
+        Index("ix_train_orders_user", "user_id"),
+        Index("ix_train_orders_plan", "travel_plan_id"),
+        Index("ix_train_orders_status", "status"),
+    )
+
+class AttractionTicketOrder(Base):
+    """景点门票订单表"""
+    __tablename__ = "attraction_ticket_orders"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="用户ID")
+    travel_plan_id = Column(Integer, ForeignKey("travel_plans.id"), nullable=True, comment="出行方案ID")
+    attraction_id = Column(Integer, ForeignKey("tourist_attractions.id"), nullable=False, comment="景点ID")
+    attraction_name = Column(String(256), nullable=False, comment="景点名称")
+    visit_date = Column(DateTime(timezone=True), nullable=False, comment="游览日期")
+    visit_time = Column(String(50), nullable=True, comment="游览时间")
+    ticket_type = Column(String(50), nullable=True, comment="门票类型（adult/child/senior/group等）")
+    ticket_count = Column(Integer, default=1, nullable=False, comment="门票数量")
+    visitor_name = Column(String(128), nullable=False, comment="游客姓名")
+    visitor_phone = Column(String(20), nullable=True, comment="游客电话")
+    unit_price = Column(Float, nullable=False, comment="单价")
+    total_price = Column(Float, nullable=False, comment="总价")
+    currency = Column(String(10), default="USD", nullable=False, comment="货币类型")
+    status = Column(SQLEnum(OrderStatus), default=OrderStatus.PENDING, nullable=False, comment="订单状态")
+    payment_id = Column(Integer, ForeignKey("payment_records.id"), nullable=True, comment="支付记录ID")
+    booking_reference = Column(String(50), nullable=True, comment="预订参考号")
+    qr_code = Column(String(512), nullable=True, comment="二维码（用于入园验证）")
+    notes = Column(Text, nullable=True, comment="备注")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, comment="创建时间")
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True, comment="更新时间")
+    
+    __table_args__ = (
+        Index("ix_ticket_orders_user", "user_id"),
+        Index("ix_ticket_orders_plan", "travel_plan_id"),
+        Index("ix_ticket_orders_attraction", "attraction_id"),
+        Index("ix_ticket_orders_status", "status"),
     )
 

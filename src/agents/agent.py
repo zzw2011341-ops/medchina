@@ -17,7 +17,8 @@ from storage.memory.memory_saver import get_memory_saver
 # 导入工具
 from tools.medical_query_tool import (
     search_doctors, get_doctor_detail, search_hospitals, 
-    get_hospital_detail, search_diseases, get_featured_doctors, get_featured_hospitals
+    get_hospital_detail, search_diseases, get_featured_doctors, get_featured_hospitals,
+    book_doctor_appointment, book_appointment_with_payment, get_appointment_detail
 )
 from tools.tourism_tool import (
     search_attractions, get_attraction_detail, 
@@ -30,6 +31,26 @@ from tools.travel_plan_tool import (
 from tools.message_tool import (
     send_message, get_messages, mark_message_as_read, 
     get_unread_count, get_conversation_list
+)
+from tools.payment_tool import (
+    create_payment, process_payment, get_payment_status, 
+    refund_payment, get_user_payments, cancel_payment
+)
+from tools.flight_booking_tool import (
+    search_flights, book_flight, book_flight_with_payment, 
+    get_flight_order_detail, cancel_flight_order
+)
+from tools.hotel_booking_tool import (
+    search_hotels, book_hotel, book_hotel_with_payment, 
+    get_hotel_order_detail, cancel_hotel_order
+)
+from tools.train_booking_tool import (
+    search_trains, book_train_ticket, book_train_ticket_with_payment, 
+    get_train_ticket_order_detail, cancel_train_ticket_order
+)
+from tools.attraction_ticket_tool import (
+    book_attraction_ticket, book_attraction_ticket_with_payment, 
+    get_attraction_ticket_order_detail, cancel_attraction_ticket_order
 )
 
 LLM_CONFIG = "config/agent_llm_config.json"
@@ -54,6 +75,12 @@ def build_agent(ctx=None):
     - 旅游景点推荐
     - 个性化出行方案生成
     - 用户间消息沟通
+    - 支付通道（微信支付、VISA、MasterCard、支付宝、PayPal、银联等）
+    - 医生预约和支付
+    - 机票预定和支付
+    - 酒店预定和支付
+    - 车票预定和支付
+    - 景点门票预定和支付
     """
     workspace_path = os.getenv("COZE_WORKSPACE_PATH", "/workspace/projects")
     config_path = os.path.join(workspace_path, LLM_CONFIG)
@@ -90,6 +117,11 @@ def build_agent(ctx=None):
         get_featured_doctors,
         get_featured_hospitals,
         
+        # 医生预约工具（含支付）
+        book_doctor_appointment,
+        book_appointment_with_payment,
+        get_appointment_detail,
+        
         # 旅游景点工具
         search_attractions,
         get_attraction_detail,
@@ -102,6 +134,41 @@ def build_agent(ctx=None):
         confirm_travel_plan,
         get_travel_plan,
         generate_sample_plan,
+        
+        # 支付工具
+        create_payment,
+        process_payment,
+        get_payment_status,
+        refund_payment,
+        get_user_payments,
+        cancel_payment,
+        
+        # 机票预定工具
+        search_flights,
+        book_flight,
+        book_flight_with_payment,
+        get_flight_order_detail,
+        cancel_flight_order,
+        
+        # 酒店预定工具
+        search_hotels,
+        book_hotel,
+        book_hotel_with_payment,
+        get_hotel_order_detail,
+        cancel_hotel_order,
+        
+        # 车票预定工具
+        search_trains,
+        book_train_ticket,
+        book_train_ticket_with_payment,
+        get_train_ticket_order_detail,
+        cancel_train_ticket_order,
+        
+        # 景点门票预定工具
+        book_attraction_ticket,
+        book_attraction_ticket_with_payment,
+        get_attraction_ticket_order_detail,
+        cancel_attraction_ticket_order,
         
         # 消息沟通工具
         send_message,

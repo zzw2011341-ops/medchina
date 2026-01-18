@@ -379,3 +379,319 @@ def get_featured_hospitals(
     
     finally:
         db.close()
+
+
+@tool
+def book_doctor_appointment(
+    user_id: int,
+    doctor_id: int,
+    appointment_date: str,
+    appointment_time: str,
+    disease_info: Optional[str] = None,
+    symptoms: Optional[str] = None,
+    notes: Optional[str] = None,
+    runtime: ToolRuntime = None
+) -> str:
+    """
+    预约医生（创建预约订单）
+    
+    Args:
+        user_id: 用户ID
+        doctor_id: 医生ID
+        appointment_date: 预约日期（格式: YYYY-MM-DD）
+        appointment_time: 预约时间（格式: HH:MM）
+        disease_info: 病情描述
+        symptoms: 症状列表（JSON字符串或逗号分隔）
+        notes: 备注信息
+        runtime: 运行时上下文
+    
+    Returns:
+        预约创建结果
+    """
+    from datetime import datetime
+    import json
+    from storage.database.shared.model import User, Appointment, AppointmentStatus
+    
+    db = get_session()
+    try:
+        # 检查用户是否存在
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            return f"❌ 错误: 用户ID {user_id} 不存在"
+        
+        # 检查医生是否存在
+        doctor = db.query(Doctor).filter(Doctor.id == doctor_id).first()
+        if not doctor:
+            return f"❌ 错误: 医生ID {doctor_id} 不存在"
+        
+        # 解析日期
+        try:
+            appointment_dt = datetime.strptime(appointment_date, "%Y-%m-%d")
+        except ValueError:
+            return "❌ 错误: 预约日期格式不正确，请使用 YYYY-MM-DD 格式"
+        
+        # 解析症状
+        symptoms_list = None
+        if symptoms:
+            try:
+                symptoms_list = json.loads(symptoms)
+            except json.JSONDecodeError:
+                symptoms_list = [s.strip() for s in symptoms.split(",")]
+        
+        # 创建预约
+        appointment = Appointment(
+            user_id=user_id,
+            doctor_id=doctor_id,
+            hospital_id=doctor.hospital_id,
+            appointment_date=appointment_dt,
+            appointment_time=appointment_time,
+            disease_info=disease_info,
+            symptoms=symptoms_list,
+            status=AppointmentStatus.PENDING,
+            notes=notes
+        )
+        
+        db.add(appointment)
+        db.commit()
+        db.refresh(appointment)
+        
+        # 获取医生费用信息
+        consultation_fee = doctor.consultation_fee_min or doctor.consultation_fee_max
+        surgery_fee = doctor.surgery_fee_min or doctor.surgery_fee_max
+        
+        fee_info = []
+        if consultation_fee:
+            fee_info.append(f"咨询费: ${consultation_fee}")
+        if surgery_fee:
+            fee_info.append(f"手术费: ${surgery_fee} - ${doctor.surgery_fee_max}")
+        
+        return f"""✅ 预约申请已提交！
+📋 预约信息:
+- 预约ID: {appointment.id}
+- 医生: {doctor.name} ({doctor.title})
+- 医院: {doctor.hospital.name if doctor.hospital else '未指定'}
+- 预约日期: {appointment_date}
+- 预约时间: {appointment_time}
+- 病情描述: {disease_info or '未填写'}
+- 状态: 待确认
+
+💰 费用信息:
+{chr(10).join(fee_info) if fee_info else '费用信息请联系医院'}
+
+⚠️ 注意事项:
+1. 请在24小时内完成预约支付
+2. 使用 book_appointment_with_payment 工具创建带支付的预约
+3. 支持的支付方式: 微信支付、VISA、MasterCard、支付宝、PayPal、银联"""
+    
+    except Exception as e:
+        db.rollback()
+        return f"❌ 预约失败: {str(e)}"
+    finally:
+        db.close()
+
+
+@tool
+def book_appointment_with_payment(
+    user_id: int,
+    doctor_id: int,
+    appointment_date: str,
+    appointment_time: str,
+    payment_method: str = "visa",
+    disease_info: Optional[str] = None,
+    symptoms: Optional[str] = None,
+    notes: Optional[str] = None,
+    runtime: ToolRuntime = None
+) -> str:
+    """
+    预约医生并创建支付订单（一站式预约+支付）
+    
+    Args:
+        user_id: 用户ID
+        doctor_id: 医生ID
+        appointment_date: 预约日期（格式: YYYY-MM-DD）
+        appointment_time: 预约时间（格式: HH:MM）
+        payment_method: 支付方式（wechat_pay/visa/mastercard/alipay/paypal/unionpay）
+        disease_info: 病情描述
+        symptoms: 症状列表（JSON字符串或逗号分隔）
+        notes: 备注信息
+        runtime: 运行时上下文
+    
+    Returns:
+        预约和支付订单信息
+    """
+    from datetime import datetime
+    import json
+    from storage.database.shared.model import User, Appointment, AppointmentStatus
+    
+    db = get_session()
+    try:
+        # 检查用户是否存在
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            return f"❌ 错误: 用户ID {user_id} 不存在"
+        
+        # 检查医生是否存在
+        doctor = db.query(Doctor).filter(Doctor.id == doctor_id).first()
+        if not doctor:
+            return f"❌ 错误: 医生ID {doctor_id} 不存在"
+        
+        # 解析日期
+        try:
+            appointment_dt = datetime.strptime(appointment_date, "%Y-%m-%d")
+        except ValueError:
+            return "❌ 错误: 预约日期格式不正确，请使用 YYYY-MM-DD 格式"
+        
+        # 解析症状
+        symptoms_list = None
+        if symptoms:
+            try:
+                symptoms_list = json.loads(symptoms)
+            except json.JSONDecodeError:
+                symptoms_list = [s.strip() for s in symptoms.split(",")]
+        
+        # 创建预约
+        appointment = Appointment(
+            user_id=user_id,
+            doctor_id=doctor_id,
+            hospital_id=doctor.hospital_id,
+            appointment_date=appointment_dt,
+            appointment_time=appointment_time,
+            disease_info=disease_info,
+            symptoms=symptoms_list,
+            status=AppointmentStatus.PENDING,
+            notes=notes,
+            consultation_fee=doctor.consultation_fee_min,
+            surgery_fee=doctor.surgery_fee_min
+        )
+        
+        db.add(appointment)
+        db.commit()
+        db.refresh(appointment)
+        
+        # 计算支付金额（使用咨询费或手术费）
+        amount = doctor.surgery_fee_min or doctor.consultation_fee_min or 100.0
+        if amount is None:
+            amount = 100.0  # 默认金额
+        
+        # 创建支付订单
+        from tools.payment_tool import create_payment as create_payment_func
+        
+        payment_result = create_payment_func(
+            user_id=user_id,
+            order_type="appointment",
+            order_id=appointment.id,
+            amount=float(amount),
+            payment_method=payment_method,
+            remark=f"预约医生 {doctor.name} - {appointment_date} {appointment_time}"
+        )
+        
+        # 关联支付订单到预约
+        payment_id = None
+        if "支付订单ID:" in payment_result:
+            try:
+                payment_id_str = payment_result.split("支付订单ID: ")[1].split("\n")[0]
+                payment_id = int(payment_id_str)
+            except (ValueError, IndexError):
+                pass
+        
+        if payment_id:
+            appointment.payment_id = payment_id
+            db.commit()
+        
+        return f"""✅ 预约和支付订单创建成功！
+
+📋 预约信息:
+- 预约ID: {appointment.id}
+- 医生: {doctor.name} ({doctor.title})
+- 医院: {doctor.hospital.name if doctor.hospital else '未指定'}
+- 预约日期: {appointment_date}
+- 预约时间: {appointment_time}
+
+💳 支付信息:
+{payment_result}
+
+💡 下一步:
+请使用 process_payment 工具完成支付，支付完成后预约将自动确认"""
+    
+    except Exception as e:
+        db.rollback()
+        return f"❌ 预约失败: {str(e)}"
+    finally:
+        db.close()
+
+
+@tool
+def get_appointment_detail(
+    appointment_id: int,
+    runtime: ToolRuntime = None
+) -> str:
+    """
+    获取预约详细信息
+    
+    Args:
+        appointment_id: 预约ID
+        runtime: 运行时上下文
+    
+    Returns:
+        预约详细信息
+    """
+    db = get_session()
+    try:
+        from storage.database.shared.model import Appointment, AppointmentStatus, PaymentStatus
+        
+        appointment = db.query(Appointment).options(
+            joinedload(Appointment.doctor).joinedload(Doctor.hospital),
+            joinedload(Appointment.user)
+        ).filter(Appointment.id == appointment_id).first()
+        
+        if not appointment:
+            return f"❌ 错误: 预约ID {appointment_id} 不存在"
+        
+        status_text = {
+            AppointmentStatus.PENDING: "⏳ 待确认",
+            AppointmentStatus.CONFIRMED: "✅ 已确认",
+            AppointmentStatus.CANCELLED: "🚫 已取消",
+            AppointmentStatus.COMPLETED: "✨ 已完成"
+        }
+        
+        result = f"""📋 预约详细信息:
+- 预约ID: {appointment.id}
+- 医生: {appointment.doctor.name} ({appointment.doctor.title})
+- 医院: {appointment.doctor.hospital.name if appointment.doctor.hospital else '未指定'}
+- 科室: {appointment.doctor.department}
+- 预约日期: {appointment.appointment_date.strftime('%Y-%m-%d') if appointment.appointment_date else '未指定'}
+- 预约时间: {appointment.appointment_time or '未指定'}
+- 状态: {status_text.get(appointment.status, appointment.status.value)}
+- 病情描述: {appointment.disease_info or '未填写'}
+"""
+        
+        if appointment.consultation_fee:
+            result += f"- 咨询费用: ${appointment.consultation_fee}\n"
+        
+        if appointment.surgery_fee:
+            result += f"- 手术费用: ${appointment.surgery_fee}\n"
+        
+        if appointment.payment_id:
+            from storage.database.shared.model import PaymentRecord
+            payment = db.query(PaymentRecord).filter(PaymentRecord.id == appointment.payment_id).first()
+            if payment:
+                payment_status_text = {
+                    PaymentStatus.PENDING: "⏳ 待支付",
+                    PaymentStatus.PAID: "✅ 已支付",
+                    PaymentStatus.FAILED: "❌ 支付失败",
+                    PaymentStatus.CANCELLED: "🚫 已取消",
+                    PaymentStatus.REFUNDED: "💰 已退款"
+                }
+                result += f"\n💳 支付信息:\n"
+                result += f"- 支付订单ID: {payment.id}\n"
+                result += f"- 支付金额: {payment.currency} {payment.amount}\n"
+                result += f"- 支付方式: {payment.payment_method.value}\n"
+                result += f"- 支付状态: {payment_status_text.get(payment.status, payment.status.value)}\n"
+        
+        if appointment.notes:
+            result += f"\n📝 备注: {appointment.notes}\n"
+        
+        return result
+    
+    finally:
+        db.close()
