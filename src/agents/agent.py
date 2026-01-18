@@ -52,6 +52,23 @@ from tools.attraction_ticket_tool import (
     book_attraction_ticket, book_attraction_ticket_with_payment, 
     get_attraction_ticket_order_detail, cancel_attraction_ticket_order
 )
+from tools.data_validation_tool import (
+    validate_phone_number, validate_passport_number, 
+    validate_email, validate_user_data
+)
+from tools.user_management_tool import (
+    get_user_list, get_user_detail, update_user_info, 
+    update_user_status, create_user, delete_user
+)
+from tools.finance_management_tool import (
+    get_finance_statistics, get_commission_rate, update_commission_rate,
+    create_bill_detail, get_bill_details, generate_bill_summary,
+    get_income_records, get_expense_records
+)
+from tools.enhanced_payment_tool import (
+    create_payment_with_bill, confirm_payment_with_bill, 
+    preview_bill_before_payment
+)
 
 LLM_CONFIG = "config/agent_llm_config.json"
 
@@ -143,6 +160,11 @@ def build_agent(ctx=None):
         get_user_payments,
         cancel_payment,
         
+        # 增强版支付工具（带账单明细）
+        create_payment_with_bill,
+        confirm_payment_with_bill,
+        preview_bill_before_payment,
+        
         # 机票预定工具
         search_flights,
         book_flight,
@@ -176,6 +198,30 @@ def build_agent(ctx=None):
         mark_message_as_read,
         get_unread_count,
         get_conversation_list,
+        
+        # 数据验证工具
+        validate_phone_number,
+        validate_passport_number,
+        validate_email,
+        validate_user_data,
+        
+        # 后台用户管理工具
+        get_user_list,
+        get_user_detail,
+        update_user_info,
+        update_user_status,
+        create_user,
+        delete_user,
+        
+        # 财务管理工具
+        get_finance_statistics,
+        get_commission_rate,
+        update_commission_rate,
+        create_bill_detail,
+        get_bill_details,
+        generate_bill_summary,
+        get_income_records,
+        get_expense_records,
     ]
     
     return create_agent(

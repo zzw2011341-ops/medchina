@@ -14,6 +14,40 @@ class UserStatus(str, enum.Enum):
     INACTIVE = "inactive"
     PENDING = "pending"
 
+class AdminRole(str, enum.Enum):
+    """管理员角色枚举"""
+    SUPER_ADMIN = "super_admin"
+    ADMIN = "admin"
+    MANAGER = "manager"
+
+class OperationType(str, enum.Enum):
+    """操作类型枚举"""
+    CREATE = "create"
+    UPDATE = "update"
+    DELETE = "delete"
+    QUERY = "query"
+    EXPORT = "export"
+    APPROVE = "approve"
+    REJECT = "reject"
+
+class BillType(str, enum.Enum):
+    """账单类型枚举"""
+    MEDICAL = "medical"
+    FLIGHT = "flight"
+    HOTEL = "hotel"
+    TRAIN = "train"
+    TICKET = "ticket"
+    GUIDE = "guide"
+    OTHER = "other"
+
+class ExpenseType(str, enum.Enum):
+    """费用类型枚举"""
+    SERVICE_FEE = "service_fee"
+    COMMISSION = "commission"
+    REFUND = "refund"
+    OPERATING_COST = "operating_cost"
+    OTHER = "other"
+
 class PlanStatus(str, enum.Enum):
     """出行方案状态枚举"""
     DRAFT = "draft"
@@ -61,6 +95,7 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, comment="用户邮箱")
     phone = Column(String(20), nullable=True, comment="手机号码")
     name = Column(String(128), nullable=False, comment="用户姓名")
+    passport_number = Column(String(50), nullable=True, comment="护照号码")
     avatar_url = Column(String(512), nullable=True, comment="头像URL")
     country = Column(String(50), nullable=True, comment="国家")
     language = Column(String(10), default="en", nullable=False, comment="首选语言")
@@ -461,5 +496,164 @@ class AttractionTicketOrder(Base):
         Index("ix_ticket_orders_plan", "travel_plan_id"),
         Index("ix_ticket_orders_attraction", "attraction_id"),
         Index("ix_ticket_orders_status", "status"),
+    )
+
+class Admin(Base):
+    """管理员表"""
+    __tablename__ = "admins"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(128), unique=True, nullable=False, comment="用户名")
+    email = Column(String(255), unique=True, nullable=False, comment="邮箱")
+    phone = Column(String(20), nullable=True, comment="手机号码")
+    name = Column(String(128), nullable=False, comment="姓名")
+    password_hash = Column(String(256), nullable=False, comment="密码哈希")
+    role = Column(SQLEnum(AdminRole), default=AdminRole.MANAGER, nullable=False, comment="角色")
+    is_active = Column(Boolean, default=True, nullable=False, comment="是否启用")
+    last_login_at = Column(DateTime(timezone=True), nullable=True, comment="最后登录时间")
+    last_login_ip = Column(String(50), nullable=True, comment="最后登录IP")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, comment="创建时间")
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True, comment="更新时间")
+    
+    # 关系
+    operation_logs = relationship("OperationLog", back_populates="admin")
+    
+    __table_args__ = (
+        Index("ix_admins_username", "username"),
+        Index("ix_admins_email", "email"),
+        Index("ix_admins_role", "role"),
+    )
+
+class OperationLog(Base):
+    """操作日志表"""
+    __tablename__ = "operation_logs"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    admin_id = Column(Integer, ForeignKey("admins.id"), nullable=False, comment="管理员ID")
+    operation_type = Column(SQLEnum(OperationType), nullable=False, comment="操作类型")
+    module = Column(String(50), nullable=False, comment="操作模块")
+    action = Column(String(100), nullable=False, comment="操作动作")
+    target_id = Column(Integer, nullable=True, comment="目标ID")
+    target_type = Column(String(50), nullable=True, comment="目标类型")
+    request_params = Column(JSON, nullable=True, comment="请求参数")
+    response_data = Column(JSON, nullable=True, comment="响应数据")
+    ip_address = Column(String(50), nullable=True, comment="IP地址")
+    user_agent = Column(String(512), nullable=True, comment="用户代理")
+    status = Column(String(20), default="success", nullable=False, comment="操作状态")
+    error_message = Column(Text, nullable=True, comment="错误信息")
+    execution_time = Column(Integer, nullable=True, comment="执行时间（毫秒）")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, comment="创建时间")
+    
+    # 关系
+    admin = relationship("Admin", back_populates="operation_logs")
+    
+    __table_args__ = (
+        Index("ix_operation_logs_admin", "admin_id"),
+        Index("ix_operation_logs_type", "operation_type"),
+        Index("ix_operation_logs_created", "created_at"),
+    )
+
+class FinanceConfig(Base):
+    """财务配置表"""
+    __tablename__ = "finance_configs"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    config_key = Column(String(100), unique=True, nullable=False, comment="配置键")
+    config_value = Column(Text, nullable=False, comment="配置值")
+    config_type = Column(String(50), default="string", nullable=False, comment="配置类型")
+    description = Column(Text, nullable=True, comment="配置描述")
+    is_active = Column(Boolean, default=True, nullable=False, comment="是否启用")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, comment="创建时间")
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True, comment="更新时间")
+    
+    __table_args__ = (
+        Index("ix_finance_configs_key", "config_key"),
+    )
+
+class BillDetail(Base):
+    """账单明细表"""
+    __tablename__ = "bill_details"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="用户ID")
+    payment_id = Column(Integer, ForeignKey("payment_records.id"), nullable=True, comment="支付记录ID")
+    travel_plan_id = Column(Integer, ForeignKey("travel_plans.id"), nullable=True, comment="出行方案ID")
+    bill_type = Column(SQLEnum(BillType), nullable=False, comment="账单类型")
+    item_name = Column(String(256), nullable=False, comment="项目名称")
+    item_description = Column(Text, nullable=True, comment="项目描述")
+    quantity = Column(Integer, default=1, nullable=False, comment="数量")
+    unit_price = Column(Float, nullable=False, comment="单价")
+    total_price = Column(Float, nullable=False, comment="总价")
+    currency = Column(String(10), default="USD", nullable=False, comment="货币类型")
+    discount = Column(Float, default=0.0, nullable=False, comment="折扣金额")
+    actual_amount = Column(Float, nullable=False, comment="实际金额")
+    service_fee_rate = Column(Float, default=0.05, nullable=False, comment="中介费率（默认5%）")
+    service_fee = Column(Float, default=0.0, nullable=False, comment="中介费金额")
+    reference_order_id = Column(Integer, nullable=True, comment="关联订单ID")
+    reference_order_type = Column(String(50), nullable=True, comment="关联订单类型")
+    is_confirmed = Column(Boolean, default=False, nullable=False, comment="是否已确认")
+    confirmed_at = Column(DateTime(timezone=True), nullable=True, comment="确认时间")
+    notes = Column(Text, nullable=True, comment="备注")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, comment="创建时间")
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True, comment="更新时间")
+    
+    __table_args__ = (
+        Index("ix_bill_details_user", "user_id"),
+        Index("ix_bill_details_payment", "payment_id"),
+        Index("ix_bill_details_type", "bill_type"),
+        Index("ix_bill_details_created", "created_at"),
+    )
+
+class IncomeRecord(Base):
+    """收入记录表"""
+    __tablename__ = "income_records"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    payment_id = Column(Integer, ForeignKey("payment_records.id"), nullable=True, comment="支付记录ID")
+    bill_id = Column(Integer, ForeignKey("bill_details.id"), nullable=True, comment="账单明细ID")
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="用户ID")
+    income_type = Column(String(50), nullable=False, comment="收入类型")
+    amount = Column(Float, nullable=False, comment="收入金额")
+    currency = Column(String(10), default="USD", nullable=False, comment="货币类型")
+    service_fee_rate = Column(Float, nullable=False, comment="中介费率")
+    service_fee_amount = Column(Float, nullable=False, comment="中介费金额")
+    net_amount = Column(Float, nullable=False, comment="净收入（扣除中介费后）")
+    transaction_date = Column(DateTime(timezone=True), nullable=False, comment="交易日期")
+    status = Column(String(20), default="settled", nullable=False, comment="状态")
+    notes = Column(Text, nullable=True, comment="备注")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, comment="创建时间")
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True, comment="更新时间")
+    
+    __table_args__ = (
+        Index("ix_income_records_payment", "payment_id"),
+        Index("ix_income_records_user", "user_id"),
+        Index("ix_income_records_type", "income_type"),
+        Index("ix_income_records_date", "transaction_date"),
+    )
+
+class ExpenseRecord(Base):
+    """费用记录表"""
+    __tablename__ = "expense_records"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    expense_type = Column(SQLEnum(ExpenseType), nullable=False, comment="费用类型")
+    amount = Column(Float, nullable=False, comment="费用金额")
+    currency = Column(String(10), default="USD", nullable=False, comment="货币类型")
+    related_payment_id = Column(Integer, ForeignKey("payment_records.id"), nullable=True, comment="关联支付记录ID")
+    related_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="关联用户ID")
+    description = Column(Text, nullable=True, comment="费用描述")
+    expense_date = Column(DateTime(timezone=True), nullable=False, comment="费用日期")
+    status = Column(String(20), default="pending", nullable=False, comment="状态")
+    approval_status = Column(String(20), default="pending", nullable=False, comment="审批状态")
+    approved_by = Column(Integer, ForeignKey("admins.id"), nullable=True, comment="审批人ID")
+    approved_at = Column(DateTime(timezone=True), nullable=True, comment="审批时间")
+    notes = Column(Text, nullable=True, comment="备注")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, comment="创建时间")
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True, comment="更新时间")
+    
+    __table_args__ = (
+        Index("ix_expense_records_type", "expense_type"),
+        Index("ix_expense_records_date", "expense_date"),
+        Index("ix_expense_records_status", "status"),
     )
 
