@@ -1,0 +1,54 @@
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: medchina-db
+    env: docker
+    plan: free
+    region: oregon
+    branch: main
+    dockerfilePath: ./docker/db.Dockerfile
+    envVars:
+      - key: POSTGRES_DB
+        value: medchina
+      - key: POSTGRES_USER
+        value: meduser
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+    disk:
+      name: data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 1
+
+  # FastAPI Application
+  - type: web
+    name: medchina-app
+    env: docker
+    plan: free
+    region: oregon
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 8000
+    envVars:
+      - key: DATABASE_URL
+        fromService:
+          type: pserv
+          name: medchina-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 1440
+      - key: COZE_WORKLOAD_IDENTITY_API_KEY
+        sync: false
+      - key: COZE_INTEGRATION_MODEL_BASE_URL
+        value: https://api.coze.com
+      - key: PYTHONPATH
+        value: /app
+    disk:
+      name: data
+      mountPath: /app/assets
+      sizeGB: 1

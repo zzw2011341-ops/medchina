@@ -1,0 +1,35 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+[[services]]
+name = "medchina-web"
+serviceName = "medchina-web"
+
+[services.environment]
+PORT = "8000"
+PYTHONPATH = "/app"
+
+[services.envVars]
+SECRET_KEY = { generate = "true" }
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = "1440"
+COZE_INTEGRATION_MODEL_BASE_URL = "https://api.coze.com"
+
+[[services.envVars.DATABASE_URL]]
+source = "Postgres"
+connectionString = "${{ Postgres.DATABASE_URL }}"
+
+[[services.envVars.COZE_WORKLOAD_IDENTITY_API_KEY]]
+source = "Runtime"
+description = "Coze API Key"
+
+[[services.volumes]]
+mountPath = "/app/assets"
+size = "1GB"
