@@ -6,7 +6,7 @@ WORKDIR /app
 # 设置环境变量
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app
+    PYTHONPATH=/app:/app/src
 
 # 安装系统依赖
 RUN apt-get update && apt-get install -y \
