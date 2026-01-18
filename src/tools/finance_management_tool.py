@@ -6,7 +6,7 @@ import json
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from langchain.tools import tool, ToolRuntime
-from coze_coding_dev_sdk.database import get_session
+from storage.database.db import get_session
 from sqlalchemy import func, and_
 
 @tool

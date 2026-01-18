@@ -4,7 +4,7 @@
 from langchain.tools import tool, ToolRuntime
 from typing import Optional, Dict, Any
 from datetime import datetime
-from coze_coding_dev_sdk.database import get_session
+from storage.database.db import get_session
 from storage.database.shared.model import TravelPlan, User, PlanStatus
 
 

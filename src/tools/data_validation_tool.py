@@ -5,7 +5,7 @@
 import re
 from typing import Optional, Dict, Any
 from langchain.tools import tool, ToolRuntime
-from coze_coding_dev_sdk.database import get_session
+from storage.database.db import get_session
 
 @tool
 def validate_phone_number(phone: str, country_code: str = "US") -> str:

@@ -6,7 +6,7 @@ from storage.database.shared.model import (
     User, Hospital, Doctor, Disease, TouristAttraction,
     DoctorDisease, UserStatus
 )
-from coze_coding_dev_sdk.database import get_session
+from storage.database.db import get_session
 
 def init_sample_data():
     """初始化示例数据"""

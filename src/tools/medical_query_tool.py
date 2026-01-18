@@ -6,7 +6,7 @@ from typing import Optional, List, cast
 from datetime import datetime
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, and_
-from coze_coding_dev_sdk.database import get_session
+from storage.database.db import get_session
 from storage.database.shared.model import Doctor, Hospital, Disease, DoctorDisease
 
 

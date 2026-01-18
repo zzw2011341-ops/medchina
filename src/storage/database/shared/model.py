@@ -1,12 +1,14 @@
-from coze_coding_dev_sdk.database import Base
-
-from sqlalchemy import MetaData, BigInteger, Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, String, Text, JSON, func, Enum as SQLEnum
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from typing import Optional
 import datetime
 import enum
 
-metadata = MetaData()
+from sqlalchemy import MetaData, BigInteger, Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, String, Text, JSON, func, Enum as SQLEnum
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+# 创建自定义 Base 类
+class Base(DeclarativeBase):
+    """数据库模型基类"""
+    pass
 
 class UserStatus(str, enum.Enum):
     """用户状态枚举"""

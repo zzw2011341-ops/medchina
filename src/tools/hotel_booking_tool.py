@@ -4,7 +4,7 @@
 from langchain.tools import tool, ToolRuntime
 from typing import Optional, cast
 from datetime import datetime, timedelta
-from coze_coding_dev_sdk.database import get_session
+from storage.database.db import get_session
 from storage.database.shared.model import HotelOrder, User, TravelPlan, OrderStatus
 
 
