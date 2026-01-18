@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MedChina Admin{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/static/css/admin.css" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if current_user %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/admin/dashboard">
+                <i class="bi bi-hospital"></i> MedChina Admin
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if active == 'dashboard' %}active{% endif %}" href="/admin/dashboard">
+                            <i class="bi bi-speedometer2"></i> 仪表板
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-people"></i> 用户管理
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item {% if active == 'users' %}active{% endif %}" href="/admin/users">用户列表</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="medicalDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-heart-pulse"></i> 医疗资源
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item {% if active == 'hospitals' %}active{% endif %}" href="/admin/hospitals">医院管理</a></li>
+                            <li><a class="dropdown-item {% if active == 'doctors' %}active{% endif %}" href="/admin/doctors">医生管理</a></li>
+                            <li><a class="dropdown-item {% if active == 'diseases' %}active{% endif %}" href="/admin/diseases">病种管理</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active == 'attractions' %}active{% endif %}" href="/admin/attractions">
+                            <i class="bi bi-geo-alt"></i> 景点管理
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="ordersDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-cart3"></i> 订单管理
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item {% if active == 'travel-plans' %}active{% endif %}" href="/admin/travel-plans">出行方案</a></li>
+                            <li><a class="dropdown-item {% if active == 'appointments' %}active{% endif %}" href="/admin/appointments">预约管理</a></li>
+                            <li><a class="dropdown-item {% if active == 'payments' %}active{% endif %}" href="/admin/payments">支付管理</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active == 'finance' %}active{% endif %}" href="/admin/finance">
+                            <i class="bi bi-currency-dollar"></i> 财务管理
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active == 'logs' %}active{% endif %}" href="/admin/logs">
+                            <i class="bi bi-journal-text"></i> 操作日志
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <span class="nav-link">
+                            <i class="bi bi-person-circle"></i> {{ current_user.username }}
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="logout()">
+                            <i class="bi bi-box-arrow-right"></i> 退出
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <div class="container-fluid mt-4">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net@1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="/static/js/admin.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

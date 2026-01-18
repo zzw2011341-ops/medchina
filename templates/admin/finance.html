@@ -1,0 +1,285 @@
+{% extends "admin/base.html" %}
+
+{% block title %}财务管理 - MedChina Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3><i class="bi bi-currency-dollar"></i> 财务管理</h3>
+</div>
+
+<!-- Finance Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <h6 class="text-muted">总收入</h6>
+                <h3 id="totalIncome">-</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <h6 class="text-muted">总支出</h6>
+                <h3 id="totalExpenses">-</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <h6 class="text-muted">净利润</h6>
+                <h3 id="netProfit">-</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <h6 class="text-muted">中介费率</h6>
+                <h3 id="commissionRate">-</h3>
+                <button class="btn btn-sm btn-outline-primary mt-2" onclick="editCommissionRate()">
+                    <i class="bi bi-pencil"></i> 修改
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Finance Tabs -->
+<ul class="nav nav-tabs mb-4" id="financeTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#bills" type="button">账单明细</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#income" type="button">收入记录</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#expenses" type="button">支出记录</button>
+    </li>
+</ul>
+
+<div class="tab-content" id="financeTabContent">
+    <!-- Bills Tab -->
+    <div class="tab-pane fade show active" id="bills">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="billsTable" class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>订单ID</th>
+                                <th>类型</th>
+                                <th>描述</th>
+                                <th>金额</th>
+                                <th>创建时间</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Income Tab -->
+    <div class="tab-pane fade" id="income">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="incomeTable" class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>金额</th>
+                                <th>描述</th>
+                                <th>创建时间</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Expenses Tab -->
+    <div class="tab-pane fade" id="expenses">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="expensesTable" class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>金额</th>
+                                <th>类型</th>
+                                <th>描述</th>
+                                <th>创建时间</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Commission Rate Modal -->
+<div class="modal fade" id="commissionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">修改中介费率</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">中介费率 (%)</label>
+                    <input type="number" class="form-control" id="newCommissionRate" min="0" max="100" step="0.1">
+                    <small class="text-muted">中介费将按此比例从总费用中收取</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveCommissionRate()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    loadFinanceStats();
+    initializeBillsTable();
+    initializeIncomeTable();
+    initializeExpensesTable();
+});
+
+function loadFinanceStats() {
+    apiRequest('/admin/api/finance/statistics', 'GET', null, function(response) {
+        if (response.success) {
+            const data = response.data;
+            $('#totalIncome').text('¥' + formatNumber(data.income));
+            $('#totalExpenses').text('¥' + formatNumber(data.expenses));
+            $('#netProfit').text('¥' + formatNumber(data.profit));
+            $('#commissionRate').text(data.commission_rate + '%');
+        }
+    });
+}
+
+function editCommissionRate() {
+    apiRequest('/admin/api/finance/commission-rate', 'GET', null, function(response) {
+        if (response.success) {
+            $('#newCommissionRate').val(response.data.commission_rate);
+            new bootstrap.Modal(document.getElementById('commissionModal')).show();
+        }
+    });
+}
+
+function saveCommissionRate() {
+    const rate = parseFloat($('#newCommissionRate').val());
+    if (isNaN(rate) || rate < 0 || rate > 100) {
+        showAlert('请输入有效的费率（0-100）', 'warning');
+        return;
+    }
+    
+    apiRequest('/admin/api/finance/commission-rate', 'PUT', { new_rate: rate }, function(response) {
+        if (response.success) {
+            showAlert('中介费率更新成功', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('commissionModal')).hide();
+            loadFinanceStats();
+        }
+    });
+}
+
+function initializeBillsTable() {
+    $('#billsTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: '/admin/api/finance/bills',
+            type: 'GET',
+            beforeSend: function(xhr) {
+                xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('admin_token'));
+            }
+        },
+        columns: [
+            { data: 'id' },
+            { data: 'order_id' },
+            { data: 'bill_type' },
+            { data: 'description' },
+            { data: 'amount', render: data => '¥' + formatNumber(data) },
+            { data: 'created_at', render: data => formatDate(data) }
+        ],
+        language: {
+            processing: '处理中...',
+            search: '搜索:',
+            lengthMenu: '显示 _MENU_ 条记录',
+            info: '显示第 _START_ 至 _END_ 条记录，共 _TOTAL_ 条',
+            infoEmpty: '没有记录',
+            paginate: { first: '首页', previous: '上一页', next: '下一页', last: '末页' }
+        },
+        pageLength: 20
+    });
+}
+
+function initializeIncomeTable() {
+    $('#incomeTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: '/admin/api/finance/income',
+            type: 'GET',
+            beforeSend: function(xhr) {
+                xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('admin_token'));
+            }
+        },
+        columns: [
+            { data: 'id' },
+            { data: 'amount', render: data => '¥' + formatNumber(data) },
+            { data: 'description' },
+            { data: 'created_at', render: data => formatDate(data) }
+        ],
+        language: {
+            processing: '处理中...',
+            search: '搜索:',
+            lengthMenu: '显示 _MENU_ 条记录',
+            info: '显示第 _START_ 至 _END_ 条记录，共 _TOTAL_ 条',
+            paginate: { first: '首页', previous: '上一页', next: '下一页', last: '末页' }
+        },
+        pageLength: 20
+    });
+}
+
+function initializeExpensesTable() {
+    $('#expensesTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: '/admin/api/finance/expenses',
+            type: 'GET',
+            beforeSend: function(xhr) {
+                xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('admin_token'));
+            }
+        },
+        columns: [
+            { data: 'id' },
+            { data: 'amount', render: data => '¥' + formatNumber(data) },
+            { data: 'expense_type' },
+            { data: 'description' },
+            { data: 'created_at', render: data => formatDate(data) }
+        ],
+        language: {
+            processing: '处理中...',
+            search: '搜索:',
+            lengthMenu: '显示 _MENU_ 条记录',
+            info: '显示第 _START_ 至 _END_ 条记录，共 _TOTAL_ 条',
+            paginate: { first: '首页', previous: '上一页', next: '下一页', last: '末页' }
+        },
+        pageLength: 20
+    });
+}
+</script>
+{% endblock %}

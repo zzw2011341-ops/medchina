@@ -1,0 +1,288 @@
+{% extends "admin/base.html" %}
+
+{% block title %}仪表板 - MedChina Admin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Stats Cards -->
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted">总用户数</h6>
+                        <h3 id="userCount">-</h3>
+                    </div>
+                    <div class="stats-icon bg-primary">
+                        <i class="bi bi-people"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted">活跃医生</h6>
+                        <h3 id="doctorCount">-</h3>
+                    </div>
+                    <div class="stats-icon bg-success">
+                        <i class="bi bi-heart-pulse"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted">活跃医院</h6>
+                        <h3 id="hospitalCount">-</h3>
+                    </div>
+                    <div class="stats-icon bg-info">
+                        <i class="bi bi-hospital"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted">总收入</h6>
+                        <h3 id="revenue">-</h3>
+                    </div>
+                    <div class="stats-icon bg-warning">
+                        <i class="bi bi-currency-dollar"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Travel Plans Stats -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-airplane"></i> 出行方案统计</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="stat-item">
+                            <span class="stat-label">总计</span>
+                            <span class="stat-value" id="planTotal">-</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-item">
+                            <span class="stat-label">草稿</span>
+                            <span class="stat-value text-warning" id="planDraft">-</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-item">
+                            <span class="stat-label">已确认</span>
+                            <span class="stat-value text-success" id="planConfirmed">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appointments Stats -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-calendar-check"></i> 预约统计</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="stat-item">
+                            <span class="stat-label">总计</span>
+                            <span class="stat-value" id="aptTotal">-</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-item">
+                            <span class="stat-label">待处理</span>
+                            <span class="stat-value text-warning" id="aptPending">-</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-item">
+                            <span class="stat-label">已确认</span>
+                            <span class="stat-value text-success" id="aptConfirmed">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Recent Users -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="bi bi-person-plus"></i> 最近用户</h5>
+                <a href="/admin/users" class="btn btn-sm btn-outline-primary">查看全部</a>
+            </div>
+            <div class="card-body">
+                <div class="list-group" id="recentUsers">
+                    <div class="text-center text-muted">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Travel Plans -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="bi bi-airplane"></i> 最近出行方案</h5>
+                <a href="/admin/travel-plans" class="btn btn-sm btn-outline-primary">查看全部</a>
+            </div>
+            <div class="card-body">
+                <div class="list-group" id="recentPlans">
+                    <div class="text-center text-muted">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Payments -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="bi bi-credit-card"></i> 最近支付</h5>
+                <a href="/admin/payments" class="btn btn-sm btn-outline-primary">查看全部</a>
+            </div>
+            <div class="card-body">
+                <div class="list-group" id="recentPayments">
+                    <div class="text-center text-muted">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    loadDashboardStats();
+    loadRecentActivity();
+});
+
+function loadDashboardStats() {
+    apiRequest('/admin/api/dashboard/stats', 'GET', function(response) {
+        if (response.success) {
+            const data = response.data;
+            
+            // Basic stats
+            $('#userCount').text(data.users.total);
+            $('#doctorCount').text(data.doctors.active);
+            $('#hospitalCount').text(data.hospitals.active);
+            $('#revenue').text('¥' + formatNumber(data.payments.revenue));
+            
+            // Travel plans
+            $('#planTotal').text(data.travel_plans.total);
+            $('#planDraft').text(data.travel_plans.draft);
+            $('#planConfirmed').text(data.travel_plans.confirmed);
+            
+            // Appointments
+            $('#aptTotal').text(data.appointments.total);
+            $('#aptPending').text(data.appointments.pending);
+            $('#aptConfirmed').text(data.appointments.confirmed);
+        }
+    });
+}
+
+function loadRecentActivity() {
+    apiRequest('/admin/api/dashboard/recent-activity?limit=5', 'GET', function(response) {
+        if (response.success) {
+            const data = response.data;
+            
+            // Recent users
+            let usersHtml = '';
+            if (data.recent_users && data.recent_users.length > 0) {
+                data.recent_users.forEach(user => {
+                    usersHtml += `
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="mb-0">${escapeHtml(user.name)}</h6>
+                                    <small class="text-muted">${escapeHtml(user.email)}</small>
+                                </div>
+                                <small class="text-muted">${formatDate(user.created_at)}</small>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                usersHtml = '<div class="text-center text-muted">暂无数据</div>';
+            }
+            $('#recentUsers').html(usersHtml);
+            
+            // Recent plans
+            let plansHtml = '';
+            if (data.recent_plans && data.recent_plans.length > 0) {
+                data.recent_plans.forEach(plan => {
+                    const statusClass = plan.status === 'confirmed' ? 'text-success' : 
+                                      plan.status === 'draft' ? 'text-warning' : 'text-secondary';
+                    plansHtml += `
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="mb-0">${escapeHtml(plan.user_name || 'N/A')}</h6>
+                                    <small class="text-muted">${escapeHtml(plan.destination)}</small>
+                                </div>
+                                <small class="${statusClass}">${plan.status}</small>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                plansHtml = '<div class="text-center text-muted">暂无数据</div>';
+            }
+            $('#recentPlans').html(plansHtml);
+            
+            // Recent payments
+            let paymentsHtml = '';
+            if (data.recent_payments && data.recent_payments.length > 0) {
+                data.recent_payments.forEach(payment => {
+                    const statusClass = payment.status === 'paid' ? 'text-success' : 
+                                      payment.status === 'pending' ? 'text-warning' : 'text-danger';
+                    paymentsHtml += `
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="mb-0">${escapeHtml(payment.user_name || 'N/A')}</h6>
+                                    <small class="text-muted">¥${formatNumber(payment.amount)}</small>
+                                </div>
+                                <small class="${statusClass}">${payment.status}</small>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                paymentsHtml = '<div class="text-center text-muted">暂无数据</div>';
+            }
+            $('#recentPayments').html(paymentsHtml);
+        }
+    });
+}
+</script>
+{% endblock %}

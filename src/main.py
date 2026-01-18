@@ -11,6 +11,8 @@ import uvicorn
 import time
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import StateGraph, END
 from langgraph.graph.state import CompiledStateGraph
@@ -350,6 +352,50 @@ class GraphService:
 
 service = GraphService()
 app = FastAPI()
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Import and include admin routes
+from admin.routes import router as admin_router
+from admin.api import (
+    auth as admin_auth_api,
+    users as admin_users_api,
+    doctors as admin_doctors_api,
+    hospitals as admin_hospitals_api,
+    diseases as admin_diseases_api,
+    attractions as admin_attractions_api,
+    travel_plans as admin_travel_plans_api,
+    appointments as admin_appointments_api,
+    payments as admin_payments_api,
+    finance as admin_finance_api,
+    logs as admin_logs_api,
+    dashboard as admin_dashboard_api,
+)
+
+# Include admin routes
+app.include_router(admin_router)
+app.include_router(admin_auth_api.router)
+app.include_router(admin_users_api.router)
+app.include_router(admin_doctors_api.router)
+app.include_router(admin_hospitals_api.router)
+app.include_router(admin_diseases_api.router)
+app.include_router(admin_attractions_api.router)
+app.include_router(admin_travel_plans_api.router)
+app.include_router(admin_appointments_api.router)
+app.include_router(admin_payments_api.router)
+app.include_router(admin_finance_api.router)
+app.include_router(admin_logs_api.router)
+app.include_router(admin_dashboard_api.router)
 
 # OpenAI 兼容接口处理器
 openai_handler = OpenAIChatHandler(service)

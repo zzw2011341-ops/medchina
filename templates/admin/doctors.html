@@ -1,0 +1,246 @@
+{% extends "admin/base.html" %}
+
+{% block title %}医生管理 - MedChina Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3><i class="bi bi-heart-pulse"></i> 医生管理</h3>
+    <button class="btn btn-primary" onclick="showCreateModal()">
+        <i class="bi bi-plus-lg"></i> 新增医生
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="doctorsTable" class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>姓名</th>
+                        <th>英文名</th>
+                        <th>职称</th>
+                        <th>科室</th>
+                        <th>所属医院</th>
+                        <th>评分</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Doctor Modal -->
+<div class="modal fade" id="doctorModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="doctorModalTitle">新增医生</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="doctorForm">
+                    <input type="hidden" id="doctorId">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">姓名 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="doctorName" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">英文名</label>
+                            <input type="text" class="form-control" id="doctorNameEn">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">职称</label>
+                            <input type="text" class="form-control" id="doctorTitle">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">科室</label>
+                            <input type="text" class="form-control" id="doctorDepartment">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">所属医院</label>
+                        <select class="form-select" id="doctorHospital">
+                            <option value="">请选择医院</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">从业年限</label>
+                            <input type="number" class="form-control" id="doctorExperience" min="0">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">评分</label>
+                            <input type="number" class="form-control" id="doctorRating" min="0" max="5" step="0.1">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="doctorFeatured">
+                            <label class="form-check-label" for="doctorFeatured">推荐医生</label>
+                        </div>
+                        <div class="col-md-6 mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="doctorActive" checked>
+                            <label class="form-check-label" for="doctorActive">启用</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveDoctor()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let doctorsTable;
+
+$(document).ready(function() {
+    initializeDoctorsTable();
+    loadHospitals();
+});
+
+function initializeDoctorsTable() {
+    doctorsTable = $('#doctorsTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: '/admin/api/doctors',
+            type: 'GET',
+            beforeSend: function(xhr) {
+                xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('admin_token'));
+            }
+        },
+        columns: [
+            { data: 'id' },
+            { data: 'name' },
+            { data: 'name_en' },
+            { data: 'title' },
+            { data: 'department' },
+            { data: 'hospital_name' },
+            { data: 'rating' },
+            { 
+                data: null,
+                render: function(data, type, row) {
+                    return row.is_active ? 
+                        '<span class="badge bg-success">启用</span>' : 
+                        '<span class="badge bg-secondary">禁用</span>';
+                }
+            },
+            {
+                data: null,
+                render: function(data, type, row) {
+                    return `
+                        <button class="btn btn-sm btn-primary" onclick="editDoctor(${row.id})">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteDoctor(${row.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    `;
+                }
+            }
+        ],
+        language: {
+            processing: '处理中...',
+            search: '搜索:',
+            lengthMenu: '显示 _MENU_ 条记录',
+            info: '显示第 _START_ 至 _END_ 条记录，共 _TOTAL_ 条',
+            infoEmpty: '没有记录',
+            paginate: { first: '首页', previous: '上一页', next: '下一页', last: '末页' }
+        },
+        pageLength: 20
+    });
+}
+
+function loadHospitals() {
+    apiRequest('/admin/api/hospitals?page=1&page_size=100', 'GET', null, function(response) {
+        if (response.success && response.data.items) {
+            const select = $('#doctorHospital');
+            response.data.items.forEach(hospital => {
+                select.append(`<option value="${hospital.id}">${escapeHtml(hospital.name)}</option>`);
+            });
+        }
+    });
+}
+
+function showCreateModal() {
+    $('#doctorModalTitle').text('新增医生');
+    $('#doctorForm')[0].reset();
+    $('#doctorId').val('');
+    $('#doctorActive').prop('checked', true);
+    new bootstrap.Modal(document.getElementById('doctorModal')).show();
+}
+
+function editDoctor(doctorId) {
+    apiRequest('/admin/api/doctors/' + doctorId, 'GET', null, function(response) {
+        if (response.success) {
+            const doctor = response.data;
+            $('#doctorModalTitle').text('编辑医生');
+            $('#doctorId').val(doctor.id);
+            $('#doctorName').val(doctor.name);
+            $('#doctorNameEn').val(doctor.name_en || '');
+            $('#doctorTitle').val(doctor.title || '');
+            $('#doctorDepartment').val(doctor.department || '');
+            $('#doctorHospital').val(doctor.hospital_id || '');
+            $('#doctorExperience').val(doctor.experience_years || '');
+            $('#doctorRating').val(doctor.rating || '');
+            $('#doctorFeatured').prop('checked', doctor.is_featured);
+            $('#doctorActive').prop('checked', doctor.is_active);
+            new bootstrap.Modal(document.getElementById('doctorModal')).show();
+        }
+    });
+}
+
+function saveDoctor() {
+    const doctorId = $('#doctorId').val();
+    const doctorData = {
+        name: $('#doctorName').val(),
+        name_en: $('#doctorNameEn').val(),
+        title: $('#doctorTitle').val(),
+        department: $('#doctorDepartment').val(),
+        hospital_id: parseInt($('#doctorHospital').val()) || null,
+        experience_years: parseInt($('#doctorExperience').val()) || null,
+        rating: parseFloat($('#doctorRating').val()) || null,
+        is_featured: $('#doctorFeatured').prop('checked'),
+        is_active: $('#doctorActive').prop('checked')
+    };
+    
+    if (!doctorData.name) {
+        showAlert('姓名为必填项', 'warning');
+        return;
+    }
+    
+    const url = doctorId ? '/admin/api/doctors/' + doctorId : '/admin/api/doctors';
+    const method = 'PUT';
+    
+    apiRequest(url, method, doctorData, function(response) {
+        if (response.success) {
+            showAlert(doctorId ? '医生更新成功' : '医生创建成功', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('doctorModal')).hide();
+            doctorsTable.ajax.reload();
+        }
+    });
+}
+
+function deleteDoctor(doctorId) {
+    if (confirm('确定要删除该医生吗？')) {
+        apiRequest('/admin/api/doctors/' + doctorId, 'DELETE', null, function(response) {
+            if (response.success) {
+                showAlert('医生删除成功', 'success');
+                doctorsTable.ajax.reload();
+            }
+        });
+    }
+}
+</script>
+{% endblock %}
