@@ -77,9 +77,9 @@ def get_user_list(
                 "avatar_url": user.avatar_url,
                 "country": user.country,
                 "language": user.language,
-                "status": user.status.value if user.status else None,
-                "created_at": user.created_at.isoformat() if user.created_at else None,
-                "updated_at": user.updated_at.isoformat() if user.updated_at else None
+                "status": user.status.value if user.status else None,  # type: ignore
+                "created_at": user.created_at.isoformat() if user.created_at else None,  # type: ignore
+                "updated_at": user.updated_at.isoformat() if user.updated_at else None  # type: ignore
             }
             user_list.append(user_dict)
         
@@ -144,9 +144,9 @@ def get_user_detail(user_id: int, runtime: ToolRuntime = None) -> str:
             "avatar_url": user.avatar_url,
             "country": user.country,
             "language": user.language,
-            "status": user.status.value if user.status else None,
-            "created_at": user.created_at.isoformat() if user.created_at else None,
-            "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+            "status": user.status.value if user.status else None,  # type: ignore
+            "created_at": user.created_at.isoformat() if user.created_at else None,  # type: ignore
+            "updated_at": user.updated_at.isoformat() if user.updated_at else None,  # type: ignore
             "statistics": {
                 "travel_plans_count": travel_plans_count,
                 "appointments_count": appointments_count,
@@ -257,7 +257,7 @@ def update_user_status(user_id: int, status: str, runtime: ToolRuntime = None) -
                 "message": f"无效的用户状态: {status}"
             })
         
-        user.status = new_status
+        user.status = new_status  # type: ignore
         db.commit()
         db.refresh(user)
         
@@ -379,7 +379,7 @@ def delete_user(user_id: int, runtime: ToolRuntime = None) -> str:
             })
         
         # 软删除：将状态设置为inactive
-        user.status = "inactive"
+        user.status = "inactive"  # type: ignore
         db.commit()
         
         return str({

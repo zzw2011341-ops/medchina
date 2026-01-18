@@ -331,7 +331,7 @@ def book_train_ticket_with_payment(
                 pass
         
         if payment_id:
-            order.payment_id = payment_id
+            order.payment_id = payment_id  # type: ignore
             db.commit()
         
         return f"""✅ 车票预定和支付订单创建成功！
@@ -405,13 +405,13 @@ def get_train_ticket_order_detail(
 - 状态: {status_text.get(order.status, order.status.value)}
 """
         
-        if order.carriage_number:
+        if order.carriage_number:  # type: ignore
             result += f"- 车厢号: {order.carriage_number}\n"
         
-        if order.seat_number:
+        if order.seat_number:  # type: ignore
             result += f"- 座位号: {order.seat_number}\n"
         
-        if order.payment_id:
+        if order.payment_id:  # type: ignore
             payment = db.query(PaymentRecord).filter(PaymentRecord.id == order.payment_id).first()
             if payment:
                 payment_status_text = {
@@ -457,10 +457,10 @@ def cancel_train_ticket_order(
         if not order:
             return f"❌ 错误: 车票订单 {order_id} 不存在"
         
-        if order.status == OrderStatus.CONFIRMED:
+        if order.status == OrderStatus.CONFIRMED:  # type: ignore
             return "❌ 已确认的订单无法取消，如需取消请先联系客服申请退款"
         
-        order.status = OrderStatus.CANCELLED
+        order.status = OrderStatus.CANCELLED  # type: ignore
         
         db.commit()
         

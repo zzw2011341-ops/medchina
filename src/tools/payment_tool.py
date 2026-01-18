@@ -123,7 +123,7 @@ def process_payment(
         if not payment:
             return f"❌ 错误: 支付订单 {payment_id} 不存在"
         
-        if payment.status == PaymentStatus.PAID:
+        if payment.status == PaymentStatus.PAID:  # type: ignore
             return f"⚠️ 该支付订单已完成支付，交易流水号: {payment.transaction_id}"
         
         if bool(payment.status != PaymentStatus.PENDING):
@@ -133,13 +133,13 @@ def process_payment(
         # 在实际应用中，这里会调用真实的支付API（微信支付、Stripe等）
         # 这里简化为直接标记支付成功
         
-        payment.status = PaymentStatus.PAID
-        payment.payment_time = datetime.now()
+        payment.status = PaymentStatus.PAID  # type: ignore
+        payment.payment_time = datetime.now()  # type: ignore
         
         db.commit()
         db.refresh(payment)
         
-        payment_status_value = payment.status.value if payment.status else ""
+        payment_status_value = payment.status.value if payment.status else ""  # type: ignore
         
         return f"""✅ 支付成功！
 🎉 支付完成信息:
@@ -188,7 +188,7 @@ def get_payment_status(
             PaymentStatus.REFUNDED: "💰 已退款"
         }
         
-        payment_status_value = payment.status.value if payment.status else ""
+        payment_status_value = payment.status.value if payment.status else ""  # type: ignore
         payment_time_str = payment.payment_time.strftime('%Y-%m-%d %H:%M:%S') if bool(payment.payment_time) else ""
         refund_time_str = payment.refund_time.strftime('%Y-%m-%d %H:%M:%S') if bool(payment.refund_time) else ""
         refund_amount_value = float(payment.refund_amount) if bool(payment.refund_amount) else 0.0
@@ -246,21 +246,21 @@ def refund_payment(
         if not payment:
             return f"❌ 错误: 支付订单 {payment_id} 不存在"
         
-        if payment.status != PaymentStatus.PAID:
+        if payment.status != PaymentStatus.PAID:  # type: ignore
             return f"❌ 只有已支付的订单才能申请退款，当前状态: {payment.status.value}"
         
         # 设置退款金额
         if refund_amount is None:
             refund_amount = payment.amount
         
-        if refund_amount > payment.amount:
+        if refund_amount > payment.amount:  # type: ignore
             return f"❌ 退款金额不能超过支付金额（{payment.currency} {payment.amount}）"
         
         # 执行退款
-        payment.status = PaymentStatus.REFUNDED
-        payment.refund_time = datetime.now()
-        payment.refund_amount = refund_amount
-        payment.remark = f"退款原因: {reason}" if reason else payment.remark
+        payment.status = PaymentStatus.REFUNDED  # type: ignore
+        payment.refund_time = datetime.now()  # type: ignore
+        payment.refund_amount = refund_amount  # type: ignore
+        payment.remark = f"退款原因: {reason}" if reason else payment.remark  # type: ignore
         
         db.commit()
         db.refresh(payment)
@@ -362,11 +362,11 @@ def cancel_payment(
         if not payment:
             return f"❌ 错误: 支付订单 {payment_id} 不存在"
         
-        if payment.status != PaymentStatus.PENDING:
+        if payment.status != PaymentStatus.PENDING:  # type: ignore
             return f"❌ 只有待支付状态的订单可以取消，当前状态: {payment.status.value}"
         
-        payment.status = PaymentStatus.CANCELLED
-        payment.remark = f"取消原因: {reason}" if reason else payment.remark
+        payment.status = PaymentStatus.CANCELLED  # type: ignore
+        payment.remark = f"取消原因: {reason}" if reason else payment.remark  # type: ignore
         
         db.commit()
         db.refresh(payment)

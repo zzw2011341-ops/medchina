@@ -206,28 +206,28 @@ def confirm_payment_with_bill(
         if not payment:
             return f"❌ 错误: 支付订单 {payment_id} 不存在"
         
-        if payment.status == PaymentStatus.PAID:
+        if payment.status == PaymentStatus.PAID:  # type: ignore
             return f"⚠️ 该支付订单已完成支付，交易流水号: {payment.transaction_id}"
         
-        if payment.status != PaymentStatus.PENDING:
+        if payment.status != PaymentStatus.PENDING:  # type: ignore
             return f"❌ 支付订单状态异常，当前状态: {payment.status.value}"
         
         # 模拟支付处理
-        payment.status = PaymentStatus.PAID
-        payment.payment_time = datetime.now()
+        payment.status = PaymentStatus.PAID  # type: ignore
+        payment.payment_time = datetime.now()  # type: ignore
         
         # 更新账单明细状态
         bill_details = db.query(BillDetail).filter(BillDetail.payment_id == payment_id).all()
         for bill in bill_details:
-            bill.is_confirmed = True
-            bill.confirmed_at = datetime.now()
+            bill.is_confirmed = True  # type: ignore
+            bill.confirmed_at = datetime.now()  # type: ignore
             
             # 创建收入记录
             income = IncomeRecord(
                 payment_id=payment.id,
                 bill_id=bill.id,
                 user_id=payment.user_id,
-                income_type=bill.bill_type.value if bill.bill_type else "other",
+                income_type=bill.bill_type.value if bill.bill_type else "other",  # type: ignore
                 amount=bill.total_price,
                 currency=bill.currency,
                 service_fee_rate=bill.service_fee_rate,

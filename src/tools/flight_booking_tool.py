@@ -36,15 +36,17 @@ def search_flights(
     Returns:
         航班列表
     """
+    # 导入 random 模块
+    import random
+    
     # 模拟航班数据
     airlines = ["中国国际航空", "东方航空", "南方航空", "海南航空", "厦门航空"]
     flight_numbers = [
-        f"CA{datetime.now().hour}{random.randint(100, 999)}" 
+        f"CA{datetime.now().hour}{random.randint(100, 999)}"
         for _ in range(5)
     ]
-    
+
     # 生成模拟航班
-    import random
     random.seed(int(datetime.now().timestamp()))
     flights = []
     
@@ -289,7 +291,7 @@ def book_flight_with_payment(
                 pass
         
         if payment_id:
-            order.payment_id = payment_id
+            order.payment_id = payment_id  # type: ignore
             db.commit()
         
         return f"""✅ 机票预定和支付订单创建成功！
@@ -363,10 +365,10 @@ def get_flight_order_detail(
 - 状态: {status_text.get(order.status, order.status.value)}
 """
         
-        if order.seat_number:
+        if order.seat_number:  # type: ignore
             result += f"- 座位号: {order.seat_number}\n"
         
-        if order.payment_id:
+        if order.payment_id:  # type: ignore
             payment = db.query(PaymentRecord).filter(PaymentRecord.id == order.payment_id).first()
             if payment:
                 payment_status_text = {
@@ -412,10 +414,10 @@ def cancel_flight_order(
         if not order:
             return f"❌ 错误: 机票订单 {order_id} 不存在"
         
-        if order.status == OrderStatus.CONFIRMED:
-            return "❌ 已确认的订单无法取消，如需取消请先联系客服申请退款"
+        if order.status == OrderStatus.CONFIRMED:  # type: ignore
+            return "❌ 已确认的订单无法取消，如需取消请先联系客服申请退款"  # type: ignore
         
-        order.status = OrderStatus.CANCELLED
+        order.status = OrderStatus.CANCELLED  # type: ignore
         
         db.commit()
         

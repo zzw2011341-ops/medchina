@@ -2,7 +2,8 @@
 医疗信息查询工具
 """
 from langchain.tools import tool, ToolRuntime
-from typing import Optional, List
+from typing import Optional, List, cast
+from datetime import datetime
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, and_
 from coze_coding_dev_sdk.database import get_session
@@ -460,9 +461,9 @@ def book_doctor_appointment(
         surgery_fee = doctor.surgery_fee_min or doctor.surgery_fee_max
         
         fee_info = []
-        if consultation_fee:
+        if consultation_fee:  # type: ignore
             fee_info.append(f"咨询费: ${consultation_fee}")
-        if surgery_fee:
+        if surgery_fee:  # type: ignore
             fee_info.append(f"手术费: ${surgery_fee} - ${doctor.surgery_fee_max}")
         
         return f"""✅ 预约申请已提交！
@@ -595,7 +596,7 @@ def book_appointment_with_payment(
                 pass
         
         if payment_id:
-            appointment.payment_id = payment_id
+            appointment.payment_id = payment_id  # type: ignore
             db.commit()
         
         return f"""✅ 预约和支付订单创建成功！
@@ -659,19 +660,19 @@ def get_appointment_detail(
 - 医生: {appointment.doctor.name} ({appointment.doctor.title})
 - 医院: {appointment.doctor.hospital.name if appointment.doctor.hospital else '未指定'}
 - 科室: {appointment.doctor.department}
-- 预约日期: {appointment.appointment_date.strftime('%Y-%m-%d') if appointment.appointment_date else '未指定'}
+- 预约日期: {appointment.appointment_date.strftime('%Y-%m-%d') if cast(datetime, appointment.appointment_date) else '未指定'}  # type: ignore
 - 预约时间: {appointment.appointment_time or '未指定'}
 - 状态: {status_text.get(appointment.status, appointment.status.value)}
 - 病情描述: {appointment.disease_info or '未填写'}
 """
         
-        if appointment.consultation_fee:
+        if appointment.consultation_fee:  # type: ignore
             result += f"- 咨询费用: ${appointment.consultation_fee}\n"
         
-        if appointment.surgery_fee:
+        if appointment.surgery_fee:  # type: ignore
             result += f"- 手术费用: ${appointment.surgery_fee}\n"
         
-        if appointment.payment_id:
+        if appointment.payment_id:  # type: ignore
             from storage.database.shared.model import PaymentRecord
             payment = db.query(PaymentRecord).filter(PaymentRecord.id == appointment.payment_id).first()
             if payment:
@@ -688,7 +689,7 @@ def get_appointment_detail(
                 result += f"- 支付方式: {payment.payment_method.value}\n"
                 result += f"- 支付状态: {payment_status_text.get(payment.status, payment.status.value)}\n"
         
-        if appointment.notes:
+        if appointment.notes:  # type: ignore
             result += f"\n📝 备注: {appointment.notes}\n"
         
         return result

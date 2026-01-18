@@ -140,7 +140,7 @@ def get_commission_rate(runtime: ToolRuntime = None) -> str:
         ).first()
         
         rate = 0.05  # 默认5%
-        if config and config.config_value:
+        if config and config.config_value:  # type: ignore
             try:
                 rate = float(config.config_value)
             except ValueError:
@@ -186,8 +186,8 @@ def update_commission_rate(rate: float, runtime: ToolRuntime = None) -> str:
         ).first()
         
         if config:
-            config.config_value = str(rate)
-            config.updated_at = datetime.now()
+            config.config_value = str(rate)  # type: ignore
+            config.updated_at = datetime.now()  # type: ignore
         else:
             config = FinanceConfig(
                 config_key="commission_rate",
@@ -353,7 +353,7 @@ def get_bill_details(
         for bill in bill_details:
             bill_dict = {
                 "id": bill.id,
-                "bill_type": bill.bill_type.value if bill.bill_type else None,
+                "bill_type": bill.bill_type.value if bill.bill_type else None,  # type: ignore
                 "item_name": bill.item_name,
                 "item_description": bill.item_description,
                 "quantity": bill.quantity,
@@ -365,7 +365,7 @@ def get_bill_details(
                 "service_fee_rate": bill.service_fee_rate,
                 "service_fee": bill.service_fee,
                 "is_confirmed": bill.is_confirmed,
-                "created_at": bill.created_at.isoformat() if bill.created_at else None
+                "created_at": bill.created_at.isoformat() if bill.created_at else None  # type: ignore
             }
             bill_list.append(bill_dict)
             total_amount += bill.actual_amount
@@ -534,7 +534,7 @@ def get_income_records(
                 "service_fee_rate": record.service_fee_rate,
                 "service_fee_amount": record.service_fee_amount,
                 "net_amount": record.net_amount,
-                "transaction_date": record.transaction_date.isoformat() if record.transaction_date else None,
+                "transaction_date": record.transaction_date.isoformat() if record.transaction_date else None,  # type: ignore
                 "status": record.status
             }
             record_list.append(record_dict)
@@ -603,11 +603,11 @@ def get_expense_records(
         for record in records:
             record_dict = {
                 "id": record.id,
-                "expense_type": record.expense_type.value if record.expense_type else None,
+                "expense_type": record.expense_type.value if record.expense_type else None,  # type: ignore
                 "amount": record.amount,
                 "currency": record.currency,
                 "description": record.description,
-                "expense_date": record.expense_date.isoformat() if record.expense_date else None,
+                "expense_date": record.expense_date.isoformat() if record.expense_date else None,  # type: ignore
                 "status": record.status,
                 "approval_status": record.approval_status
             }
