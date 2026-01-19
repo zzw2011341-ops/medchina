@@ -399,7 +399,7 @@ app.include_router(admin_dashboard_api.router)
 
 # Import and include debug routes
 from debug_routes import register_debug_routes
-register_debug_routes()
+register_debug_routes(app)
 
 # OpenAI 兼容接口处理器
 openai_handler = OpenAIChatHandler(service)

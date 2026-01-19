@@ -1,10 +1,8 @@
 """添加路由调试端点"""
 from fastapi import APIRouter
 
-def register_debug_routes():
+def register_debug_routes(app):
     """注册调试路由到应用"""
-    from main import app
-
     debug_router = APIRouter(prefix="/debug", tags=["Debug"])
 
     @debug_router.get("/routes")
