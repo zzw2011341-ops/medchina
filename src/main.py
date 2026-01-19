@@ -29,6 +29,9 @@ from utils.messages.server import (
 )
 from utils.error import ErrorClassifier, classify_error
 
+# 应用启动检查
+import startup_check
+
 setup_logging(
     log_file=LOG_FILE,
     max_bytes=100 * 1024 * 1024, # 100MB
